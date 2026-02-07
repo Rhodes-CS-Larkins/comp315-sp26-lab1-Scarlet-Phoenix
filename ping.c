@@ -51,78 +51,32 @@ int main(int argc, char **argv) {
       nping, arraysize, errors, ponghost, pongport);
 
   char arr[arraysize]; //= 200; 
- // for (int i = 0; i < sizeof(arr); i++){
-    //arr[i] = 200; 
-  //}
- 
-  //if (verbose) printf("ping: attempting to alloc and memset arr\n");
- /* char *arr = malloc(arraysize * sizeof(char)); 
-  if (arr == NULL){
-    perror("Failed to alloc array"); 
-    exit(1);
-  }
-  memset(arr, 200, arraysize);
-  */
   for (size_t cur = 0; cur < arraysize; cur++){
     arr[cur] = (char)200;
   }
-  printf("set char array to 200\n");
-  int sockfd = -1 ; 
- // int numbytes; 
-  int sadderinfo;
-  struct addrinfo hints, *servinfo, *p; // int rv;
-//  char s[INET6_ADDRSTRLEN];
-  hints.ai_family = AF_INET; 
-  hints.ai_socktype = SOCK_DGRAM; 
-  hints.ai_protocol = IPPROTO_UDP; 
- if ((sadderinfo = getaddrinfo(ponghost, pongport, &hints, &servinfo)) == -1)
- {
-   perror("ping: addrinfo"); 
- //  return 1;
- }
-  printf("ping: set addrinfo, attempting to call socket\n"); 
- // sockfd = socket(servinfo->ai_family, servinfo->ai_socktype, servinfo->ai_protocol);
- for (p = servinfo; p != NULL; p = p->ai_next) {
-   if ((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) != -1){
-     printf("Client: connected.\n");
-     break;
-   }
-  if (sockfd == -1) {
-    perror("Socket not found.");
-    freeaddrinfo(servinfo);
-    return 1; 
-  }
- }
-  printf("Client: Trying to send to %d. sadderinfo: %d \n", sockfd, sadderinfo); 
-//  int totalTimeCounter = 0;
- // int localTimeCounter = 0;
-  char recvArr[arraysize]; 
-  for (int pingnum = 0; pingnum < nping; pingnum++)
+  struct sockaddr_in saddr; 
+  bzero(&saddr, sizeof(saddr));
+  int sockfd; 
+
+
+ // int len; 
+  sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+
+  if(connect(sockfd, (struct sockaddr *)&saddr, sizeof(saddr)) < 0)
   {
-//    localTimeCounter = 0; 
-    printf("Attempting to send arr.\n"); 
-    send(sockfd, arr, sizeof(arr), 0);
-    printf("Attempting to recieve arr\n"); 
-    ssize_t recvcheck = recv(sockfd, recvArr, sizeof(arr), 0);
-    if (recvcheck == -1)
-    {
-      perror("ping: recvcheck recieved nothing back"); 
+      printf("\n Error : Connect Failed \n");
+      exit(0);
   }
-    for (int i = 0; i < arraysize; i++)
-    {
-      if ((int)recvArr[i] != 201){
-        perror("ping: array did not arrive back with size 201"); 
-        break;
-      }
-    }
-    printf("ping: looping again."); 
-
-
-
-
-
-
+  char recvbuf[arraysize]; 
+  for (int cur = 0; cur < nping; cur++)
+  {
+    
+    sendto(sockfd, arr, arraysize, 0, (struct sockaddr*)NULL, sizeof(saddr));
+    printf("client:sent \n");
+    recvfrom(sockfd, recvbuf, sizeof(recvbuf), 0, (struct sockaddr*)NULL, NULL);
+    printf("client:recieved\n");
   }
+  printf("client:finished\n");
 
 
 

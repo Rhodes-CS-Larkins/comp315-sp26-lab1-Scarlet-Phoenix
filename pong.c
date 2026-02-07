@@ -35,69 +35,64 @@ int main(int argc, char **argv) {
     }
   }
  // pongport = strdup("127.0.0.1");
+// char recvBuf;
+ int sockfd;// len; 
+ int rv; 
+ //struct sockaddr_in servaddr, clientaddr;
+ struct addrinfo servaddr, hints, *servinfo, *p; 
+ bzero(&servaddr, sizeof(servaddr)); 
+ hints.ai_family = AF_INET; 
+ hints.ai_socktype = SOCK_DGRAM; 
+ hints.ai_protocol = IPPROTO_UDP; 
+ hints.ai_flags = AI_PASSIVE; 
  
 
-  // pong implementation goes here.
-  printf("nping: %d pongport: %s\n", nping, pongport);
-
-  struct addrinfo  hints, *servinfo, *p;
-  int sadderinfo; 
-  hints.ai_family = AF_INET;
-  hints.ai_socktype = SOCK_DGRAM; 
-  hints.ai_protocol = IPPROTO_UDP;
-  hints.ai_flags = AI_PASSIVE; 
-  int sockfd;
-//  int bindret;
-  printf("pong: attempting to call getaddrinfo\n");   
-  sadderinfo = getaddrinfo(NULL, pongport, &hints, &servinfo);
-  if (sadderinfo != 0){
-    printf("pong: sadderinfo failed"); 
-  }
-
-  printf("saddr %d\n", sadderinfo); 
-
-
-  printf("attempting bind.");
-  for(p = servinfo; p!= NULL; p = p->ai_next)
-  {
-    if ((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1){
-      perror("server: socket\n");
-      continue;
-    }
-
-    int y = 1;
-    setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &y, sizeof(y));
-    if ((bind(sockfd, p->ai_addr, p->ai_addrlen)) == -1){
-      perror("server: bind\n");
-      close(sockfd); 
-      continue;
-    }else{
-      perror("server: binded.");
-      break;
-    }
-  }
-  if (sockfd == -1){
-    printf("socket failed to bind."); 
+  if (( rv = getaddrinfo(NULL, pongport, &hints, &servinfo)) != 0){
     return 1;
   }
+  for (p = servinfo; p != NULL; p = p->ai_next) {
+    sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
+    if (sockfd == -1) continue;
 
-  freeaddrinfo(servinfo); 
-  if (0) printf("pong: sadderinfo: %d", sadderinfo);
-  printf("waiting for connections.");
-  while(1){
-    // int newsock = accept(sockfd, (struct sockaddr *) &their_addr, &sin_size
-    for (int i = 0; i < nping; i++){
-      char cbuf[1024];
+    int yes = 1;
+    setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
 
-      recv(sockfd, cbuf, sizeof(cbuf), 0); 
-      printf("pong[%d]: recieved packet from %d", i,sockfd );
-      for (int v = 0; v < sizeof(cbuf); v++)
-      {
-         cbuf[v]++;
-        }
-      send(sockfd, &cbuf, sizeof(cbuf), 0);
+    if (bind(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
+        close(sockfd);
+        continue;
     }
+
+    break;
   }
+  freeaddrinfo(servinfo); 
+  printf("pong: listening on port %s\n", pongport);
+  printf("%d", nping);
+  while(1){
+    char buf[1024];                     // fixed-size buffer — adjust as needed
+    struct sockaddr_storage their_addr;
+    socklen_t addr_len = sizeof(their_addr);
+
+    ssize_t numbytes = recvfrom(sockfd, buf, sizeof(buf)-1, 0,
+                                (struct sockaddr *)&their_addr, &addr_len);
+    printf("recieved %u\n",(int) numbytes); 
+
+    if (numbytes == -1) {
+        perror("pong: recvfromerror\n");
+        continue;
+    }
+    for (ssize_t i = 0; i < numbytes; i++) {
+        buf[i]++;
+    }
+
+
+    sendto(sockfd, buf, numbytes, 0,
+           (struct sockaddr *)&their_addr, addr_len);
+}
+
+
+
+  //sockfd = socket(AF_INET, SOCK_DGRAM, 0); 
+
   return 0;
 }
 
