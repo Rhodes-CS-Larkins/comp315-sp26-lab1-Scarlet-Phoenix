@@ -34,7 +34,7 @@ int main(int argc, char **argv) {
       fprintf(stderr, "usage: pong [-n #pings] [-p port]\n");
     }
   }
-
+ // pongport = strdup("127.0.0.1");
  
 
   // pong implementation goes here.
@@ -44,58 +44,52 @@ int main(int argc, char **argv) {
   int sadderinfo; 
   hints.ai_family = AF_INET;
   hints.ai_socktype = SOCK_DGRAM; 
-  hints.ai_protocol = IPPROTO_UDP; 
+  hints.ai_protocol = IPPROTO_UDP;
+  hints.ai_flags = AI_PASSIVE; 
   int sockfd;
 //  int bindret;
-  
+  printf("pong: attempting to call getaddrinfo\n");   
   sadderinfo = getaddrinfo(NULL, pongport, &hints, &servinfo);
-/*
+  if (sadderinfo != 0){
+    printf("pong: sadderinfo failed"); 
+  }
+
+  printf("saddr %d\n", sadderinfo); 
+
+
+  printf("attempting bind.");
   for(p = servinfo; p!= NULL; p = p->ai_next)
   {
     if ((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1){
       perror("server: socket\n");
       continue;
     }
+
+    int y = 1;
+    setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &y, sizeof(y));
     if ((bind(sockfd, p->ai_addr, p->ai_addrlen)) == -1){
       perror("server: bind\n");
+      close(sockfd); 
       continue;
+    }else{
+      perror("server: binded.");
+      break;
+    }
   }
-*/
-  //bind(sockfd, p->ai_addr, p->ai_addrlen);
-  //sockfd = socket(servinfo->ai_family, servinfo->ai_socktype, servinfo->ai_protocol); 
-/*   for(p = servinfo; p != NULL; p = p->ai_next) {
-        if ((sockfd = socket(p->ai_family, p->ai_socktype,
-                p->ai_protocol)) == -2) {
-            perror("server: socket");
-            continue;
-        }
-   }
+  if (sockfd == -1){
+    printf("socket failed to bind."); 
+    return 1;
+  }
 
-  bindret = bind(sockfd, servinfo->ai_addr, servinfo->ai_addrlen);
-
-*/
-  printf("pong: sadderinfo: %d", sadderinfo);
+  freeaddrinfo(servinfo); 
+  if (0) printf("pong: sadderinfo: %d", sadderinfo);
   printf("waiting for connections.");
   while(1){
-    for (p = servinfo; p != NULL; p = p->ai_next) {
-      if ((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -2){
-        perror("Server: didn't bind to socket");
-        continue;
-
-      }
-      if ((bind(sockfd, p->ai_addr, p->ai_addrlen)) == -1){
-        perror("pong: bind error");
-        close(sockfd);
-        continue;
-      }
-    } 
-
-
-
     // int newsock = accept(sockfd, (struct sockaddr *) &their_addr, &sin_size
     for (int i = 0; i < nping; i++){
-      char *cbuf; 
-      recv(sockfd, &cbuf, sizeof(cbuf), 0); 
+      char cbuf[1024];
+
+      recv(sockfd, cbuf, sizeof(cbuf), 0); 
       printf("pong[%d]: recieved packet from %d", i,sockfd );
       for (int v = 0; v < sizeof(cbuf); v++)
       {

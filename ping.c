@@ -67,7 +67,7 @@ int main(int argc, char **argv) {
     arr[cur] = (char)200;
   }
   printf("set char array to 200\n");
-  int sockfd; 
+  int sockfd = -1 ; 
  // int numbytes; 
   int sadderinfo;
   struct addrinfo hints, *servinfo, *p; // int rv;
@@ -78,29 +78,36 @@ int main(int argc, char **argv) {
  if ((sadderinfo = getaddrinfo(ponghost, pongport, &hints, &servinfo)) == -1)
  {
    perror("ping: addrinfo"); 
-   return 1;
+ //  return 1;
  }
   printf("ping: set addrinfo, attempting to call socket\n"); 
  // sockfd = socket(servinfo->ai_family, servinfo->ai_socktype, servinfo->ai_protocol);
  for (p = servinfo; p != NULL; p = p->ai_next) {
-   if ((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1){
+   if ((sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) != -1){
      printf("Client: connected.\n");
-     continue;
+     break;
    }
   if (sockfd == -1) {
     perror("Socket not found.");
-    exit(1);
+    freeaddrinfo(servinfo);
+    return 1; 
   }
  }
-  printf("Client: Trying to send to %d.\n", sadderinfo); 
+  printf("Client: Trying to send to %d. sadderinfo: %d \n", sockfd, sadderinfo); 
 //  int totalTimeCounter = 0;
  // int localTimeCounter = 0;
   char recvArr[arraysize]; 
   for (int pingnum = 0; pingnum < nping; pingnum++)
   {
 //    localTimeCounter = 0; 
+    printf("Attempting to send arr.\n"); 
     send(sockfd, arr, sizeof(arr), 0);
-    recv(sockfd, recvArr, sizeof(arr), 0);
+    printf("Attempting to recieve arr\n"); 
+    ssize_t recvcheck = recv(sockfd, recvArr, sizeof(arr), 0);
+    if (recvcheck == -1)
+    {
+      perror("ping: recvcheck recieved nothing back"); 
+  }
     for (int i = 0; i < arraysize; i++)
     {
       if ((int)recvArr[i] != 201){
@@ -108,6 +115,7 @@ int main(int argc, char **argv) {
         break;
       }
     }
+    printf("ping: looping again."); 
 
 
 
