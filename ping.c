@@ -57,7 +57,8 @@ int main(int argc, char **argv) {
   struct addrinfo hints, *gadderinfo, *p; 
   hints.ai_family = AF_INET;      
   hints.ai_socktype = SOCK_DGRAM; 
-  hints.ai_protocol = IPPROTO_UDP;
+  hints.ai_protocol = IPPROTO_UDP; // instructions specify IVP4 and UDP
+  hints.ai_flags = AI_PASSIVE; 
   int sockfd; 
 
   int addrinfret = getaddrinfo(ponghost, pongport, &hints, &gadderinfo);
@@ -73,18 +74,19 @@ int main(int argc, char **argv) {
  
  for (p = gadderinfo; p != NULL; p = p->ai_next){
    sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
-   if (sockfd == -1) continue;
-    if (bind(sockfd, p->ai_addr, p->ai_addrlen) == -1){
-      close(sockfd); 
-      continue;
-    }
+   if (sockfd != -1){
     break;
+   }
  }
  //freeaddrinfo(gadderinfo);
  
  // sockfd = socket(gadderinfo->ai_family, gadderinfo->ai_socktype, gadderinfo->ai_protocol);
-printf("ping: listening on port %s\n", pongport); 
+  printf("ping: attempting connect  on port %s\n", pongport); 
 
+  if (sockfd == -1){
+   printf("no usable socket found."); 
+   return 1;
+  }
 
 
 
@@ -94,19 +96,64 @@ printf("ping: listening on port %s\n", pongport);
       exit(0);
   }
   */
-  char recvbuf[arraysize]; 
-  for (int cur = 0; cur < nping; cur++)
+  char recvbuf[arraysize];
+  struct sockaddr_storage their_addr;
+  //socklen_t socklen_A
+  //printf("ping: startign loop\n");
+  
+  //printf("aaa\n");
+  //perror("the loop should start now.");i
+  ssize_t sendcheck;
+  ssize_t recvcheck;
+  int validateResultPong = 0;
+  double tottime = 0;
+  double timeAtSend = 0;
+  double timeAtRecieve = 0;
+  double nTime = 0; 
+  for (int i = 0; i  < nping; i++)   
   {
-    struct sockaddr_storage their_addr; 
-    socklen_t addr_len = sizeof(their_addr); 
+  
+  //  socklen_t addr_len = gadderinfo->ai_addrlen;
 
+  //  printf("client:attempting send"); 
+    timeAtSend = get_wctime();
+     sendcheck = sendto(sockfd, arr, sizeof(arr), 0, gadderinfo->ai_addr,gadderinfo->ai_addrlen);
     
-     sendto(sockfd, arr, arraysize, 0, (struct sockaddr*)&their_addr, addr_len);
-    printf("client:sent \n");
+    if (sendcheck == -1){
+     //  printf("ping:sent \n");
+   //  }else{
+       printf("ping:send error occured.\n");
+     }
 
-    recvfrom(sockfd, recvbuf, sizeof(recvbuf), 0, (struct sockaddr*)&their_addr, &addr_len);
-    printf("client:recieved\n");
+    socklen_t  recvsocklen = sizeof(their_addr); 
+    recvcheck =  recvfrom(sockfd, recvbuf, sizeof(recvbuf), 0, (struct sockaddr*)&their_addr, &recvsocklen);
+    timeAtRecieve = get_wctime();
+    if (recvcheck != -1) { 
+     // printf("ping:recieved\n");
+
+      //validate section. 
+      for (int j = 0; j < sizeof(recvbuf); j++){
+       // printf("%d\n", (int) recvbuf[j]);
+        if (recvbuf[j] != (char) 201){
+          validateResultPong = 1;
+        }
+      }
+      tottime += (timeAtRecieve - timeAtSend); 
+      nTime = (timeAtRecieve - timeAtSend);
+      printf("ping[%d] : round-trip time: %lf ms\n", i, nTime);
+      
+
+    }else{
+      printf("ping: recieve error occured.\n");
+    }
+    
   }
+ if (validateResultPong == 1) {
+    printf("ping: returned buffs from server did not have 201\n"); 
+  }else{
+    printf("no errors detected");
+  }
+  printf("time to send %d packets of %d bytes %lf ms (%lf avg per packet)\n", nping, arraysize, tottime, (tottime / nping));
   printf("client:finished\n");
 
 

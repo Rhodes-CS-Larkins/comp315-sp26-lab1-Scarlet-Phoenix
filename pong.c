@@ -17,6 +17,12 @@
 #define PORTNO "1266"
 
 
+/*void *get_in_addr (struct sockaddr *sa) 
+{
+  return &(((struct sockaddr_in*)sa)->sin_addr);
+}*/
+
+
 int main(int argc, char **argv) {
   int ch;
   int nping = 1;                    // default packet count
@@ -40,7 +46,7 @@ int main(int argc, char **argv) {
  int rv; 
  //struct sockaddr_in servaddr, clientaddr;
  struct addrinfo servaddr, hints, *servinfo, *p; 
- bzero(&servaddr, sizeof(servaddr)); 
+ memset(&servaddr, 0, sizeof(servaddr));
  hints.ai_family = AF_INET; 
  hints.ai_socktype = SOCK_DGRAM; 
  hints.ai_protocol = IPPROTO_UDP; 
@@ -66,30 +72,41 @@ int main(int argc, char **argv) {
   }
   freeaddrinfo(servinfo); 
   printf("pong: listening on port %s\n", pongport);
-  printf("%d", nping);
-  int counter = 0; 
+  //printf("%d", nping);
+  //int counter = 0; 
+  struct sockaddr their_addr; 
+  socklen_t addr_len = sizeof(their_addr);
+  //char s[AF_INET];
+  
 
-  while(1){
-    char buf[1024];                     // fixed-size buffer — adjust as needed
-    struct sockaddr_storage their_addr;
-    socklen_t addr_len = sizeof(their_addr);
 
+
+  //while(1){
+  for (int curr = 0; curr < nping; curr++){
+    char buf[1024];                     
+   // struct sockaddr_storage their_addr;
+    //socklen_t addr_len = sizeof(their_addr);
     ssize_t numbytes = recvfrom(sockfd, buf, sizeof(buf)-1, 0,
                                 (struct sockaddr *)&their_addr, &addr_len);
-    printf("pong[%d] : recieved packet from sockfd %d\n", counter, sockfd );   
+    printf("pong[%d] : recieved packet from %s\n", curr, their_addr.sa_data);
+         //inet_ntop(their_addr.ss_family, get_in_addr((struct sockaddr *) &their_addr), s, sizeof s)); 
+    //inet_ntop(AF_INET, &((struct sockaddr_in *) their_addr.ai_addr), ipAddress, INET_ADDRSTRLEN) );   
 
     if (numbytes == -1) {
         perror("pong: recvfromerror\n");
-        continue;
-    }else{
-      counter++;
-    }
-    for (ssize_t i = 0; i < numbytes; i++) {
-        buf[i]++;
+        return(1);
+    }//else{
+      //counter++;
+    //  if (counter >= nping){
+      //  counter = 0; 
+      //}
+    //}
+    for (ssize_t i = 0; i < sizeof(buf); i++) {
+        buf[i] = (char)201; 
     }
 
 
-    sendto(sockfd, buf, numbytes, 0,
+    sendto(sockfd, buf, sizeof(buf), 0,
            (struct sockaddr *)&their_addr, addr_len);
 }
 
