@@ -54,26 +54,57 @@ int main(int argc, char **argv) {
   for (size_t cur = 0; cur < arraysize; cur++){
     arr[cur] = (char)200;
   }
-  struct sockaddr_in saddr; 
-  bzero(&saddr, sizeof(saddr));
+  struct addrinfo hints, *gadderinfo, *p; 
+  hints.ai_family = AF_INET;      
+  hints.ai_socktype = SOCK_DGRAM; 
+  hints.ai_protocol = IPPROTO_UDP;
   int sockfd; 
+
+  int addrinfret = getaddrinfo(ponghost, pongport, &hints, &gadderinfo);
+
+  if (addrinfret != 0){
+    printf("ping: GETADDRINFO RETURNED VALUE OTHER THAN 0\n"); 
+  }
+
+
 
 
  // int len; 
-  sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+ 
+ for (p = gadderinfo; p != NULL; p = p->ai_next){
+   sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
+   if (sockfd == -1) continue;
+    if (bind(sockfd, p->ai_addr, p->ai_addrlen) == -1){
+      close(sockfd); 
+      continue;
+    }
+    break;
+ }
+ //freeaddrinfo(gadderinfo);
+ 
+ // sockfd = socket(gadderinfo->ai_family, gadderinfo->ai_socktype, gadderinfo->ai_protocol);
+printf("ping: listening on port %s\n", pongport); 
 
-  if(connect(sockfd, (struct sockaddr *)&saddr, sizeof(saddr)) < 0)
+
+
+
+ /* if(connect(sockfd, (struct sockaddr *)&saddr, sizeof(saddr)) < 0)
   {
       printf("\n Error : Connect Failed \n");
       exit(0);
   }
+  */
   char recvbuf[arraysize]; 
   for (int cur = 0; cur < nping; cur++)
   {
+    struct sockaddr_storage their_addr; 
+    socklen_t addr_len = sizeof(their_addr); 
+
     
-    sendto(sockfd, arr, arraysize, 0, (struct sockaddr*)NULL, sizeof(saddr));
+     sendto(sockfd, arr, arraysize, 0, (struct sockaddr*)&their_addr, addr_len);
     printf("client:sent \n");
-    recvfrom(sockfd, recvbuf, sizeof(recvbuf), 0, (struct sockaddr*)NULL, NULL);
+
+    recvfrom(sockfd, recvbuf, sizeof(recvbuf), 0, (struct sockaddr*)&their_addr, &addr_len);
     printf("client:recieved\n");
   }
   printf("client:finished\n");

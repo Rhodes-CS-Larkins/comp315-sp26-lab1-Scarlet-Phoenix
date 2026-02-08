@@ -54,8 +54,8 @@ int main(int argc, char **argv) {
     sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
     if (sockfd == -1) continue;
 
-    int yes = 1;
-    setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
+    int y = 1;
+    setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &y, sizeof(y));
 
     if (bind(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
         close(sockfd);
