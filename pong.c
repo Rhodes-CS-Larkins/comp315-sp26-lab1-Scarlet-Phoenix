@@ -44,7 +44,6 @@ int main(int argc, char **argv) {
 // char recvBuf;
  int sockfd;// len; 
  int rv; 
- //struct sockaddr_in servaddr, clientaddr;
  struct addrinfo servaddr, hints, *servinfo, *p; 
  memset(&servaddr, 0, sizeof(servaddr));
  hints.ai_family = AF_INET; 
@@ -74,9 +73,9 @@ int main(int argc, char **argv) {
   printf("pong: listening on port %s\n", pongport);
   //printf("%d", nping);
   //int counter = 0; 
-  struct sockaddr their_addr; 
+  struct sockaddr_storage their_addr; 
   socklen_t addr_len = sizeof(their_addr);
-  //char s[AF_INET];
+  char s[AF_INET];
   
 
 
@@ -88,9 +87,12 @@ int main(int argc, char **argv) {
     //socklen_t addr_len = sizeof(their_addr);
     ssize_t numbytes = recvfrom(sockfd, buf, sizeof(buf)-1, 0,
                                 (struct sockaddr *)&their_addr, &addr_len);
-    printf("pong[%d] : recieved packet from %s\n", curr, their_addr.sa_data);
+
+    struct sockaddr_in *temptheiraddr = (struct sockaddr_in *) &their_addr;
+    printf("pong[%d] : recieved packet from %s\n", curr, inet_ntop(AF_INET, &temptheiraddr->sin_addr,s, sizeof s));
          //inet_ntop(their_addr.ss_family, get_in_addr((struct sockaddr *) &their_addr), s, sizeof s)); 
     //inet_ntop(AF_INET, &((struct sockaddr_in *) their_addr.ai_addr), ipAddress, INET_ADDRSTRLEN) );   
+    ////This returns null, and I can't figure out why, And I'm out of time, so. 
 
     if (numbytes == -1) {
         perror("pong: recvfromerror\n");
@@ -109,9 +111,6 @@ int main(int argc, char **argv) {
     sendto(sockfd, buf, sizeof(buf), 0,
            (struct sockaddr *)&their_addr, addr_len);
 }
-
-
-
   //sockfd = socket(AF_INET, SOCK_DGRAM, 0); 
 
   return 0;

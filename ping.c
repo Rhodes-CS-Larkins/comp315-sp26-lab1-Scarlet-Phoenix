@@ -151,7 +151,7 @@ int main(int argc, char **argv) {
  if (validateResultPong == 1) {
     printf("ping: returned buffs from server did not have 201\n"); 
   }else{
-    printf("no errors detected");
+    printf("no errors detected\n");
   }
   printf("time to send %d packets of %d bytes %lf ms (%lf avg per packet)\n", nping, arraysize, tottime, (tottime / nping));
   printf("client:finished\n");
