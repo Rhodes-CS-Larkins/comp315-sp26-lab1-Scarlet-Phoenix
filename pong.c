@@ -67,6 +67,8 @@ int main(int argc, char **argv) {
   freeaddrinfo(servinfo); 
   printf("pong: listening on port %s\n", pongport);
   printf("%d", nping);
+  int counter = 0; 
+
   while(1){
     char buf[1024];                     // fixed-size buffer — adjust as needed
     struct sockaddr_storage their_addr;
@@ -74,11 +76,13 @@ int main(int argc, char **argv) {
 
     ssize_t numbytes = recvfrom(sockfd, buf, sizeof(buf)-1, 0,
                                 (struct sockaddr *)&their_addr, &addr_len);
-    printf("recieved %u\n",(int) numbytes); 
+    printf("pong[%d] : recieved packet from sockfd %d\n", counter, sockfd );   
 
     if (numbytes == -1) {
         perror("pong: recvfromerror\n");
         continue;
+    }else{
+      counter++;
     }
     for (ssize_t i = 0; i < numbytes; i++) {
         buf[i]++;
